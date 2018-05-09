@@ -3,58 +3,160 @@
 #include <PubSubClient.h>
 #include "Adafruit_Trellis.h"
 
+#define MAX_STANDBY_TIME  60000
+#define MAX_RANDOM_ANIMATION_TIME  1000
+#define NUM_KEYS  16
+
 const char* ssid = "";
 const char* password = "";
 char* mqttServer = "192.168.1.133";
 const int mqttPort = 1883;
 const char* mqttUser = "admin";
 const char* mqttPassword = "admin";
-const int numKeys = 16;
+const char* mqttPubTopic = "fromAtreyu";
+const char* mqttSubTopic = "toAtreyu";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 Adafruit_Trellis matrix0 = Adafruit_Trellis();
 Adafruit_TrellisSet trellis =  Adafruit_TrellisSet(&matrix0);
-bool shutDownPressed = false;
+int currentPage = 0;
+long lastPress = 0;
+long lastRandomAnimation = 0;
 
 void setup() {
   Serial.begin(115200);
+  randomSeed(analogRead(0));
   trellis.begin(0x70);
   trellis.setBrightness(15);
-  displayInit();
+  displayInitAnimation();
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
-    displayWifi();
+    displayWifiAnimation();
   }
   client.setServer(mqttServer, mqttPort);
   client.setCallback(callback);
   while (!client.connected()) {
     if(client.connect("ESP8266Client", mqttUser, mqttPassword)) {
-      displayConnectionSuccess();
+      displayConnectionSuccessAnimation();
     } else {
-      displayConnectionError();
-      delay(2000);
+      displayConnectionErrorAnimation();
+      if (trellis.readSwitches() && trellis.isKeyPressed(15)) {
+        changeIPMode();  
+      }
     }
   }
-  client.subscribe("toTrellis");
-  client.publish("fromTrellis","1");
-  
+  client.subscribe(mqttSubTopic);
 }
 
-void displayInit() {
-  for (uint8_t i=0; i<numKeys; i++) {
+void changeIPMode() {  
+  displayNumPad();
+  int keyPresses = 0;
+  while (keyPresses < 4) {
+    if (trellis.readSwitches()) {
+      for (int key = 0; key < NUM_KEYS; key++) {
+        if (trellis.isKeyPressed(key)) {
+          int ipNumber = -1;
+          if (key >= 0 && key <= 2) {
+            ipNumber = key + 1;
+          } else if (key >= 4 && key <= 6) {
+            ipNumber = key;
+          } else if (key >= 8 && key <= 10) {
+            ipNumber = key - 1;
+          } else if (key == 13) {
+            ipNumber = 0;
+          }
+          if (ipNumber > -1) {
+            if (keyPresses == 0) { 
+              mqttServer[8] = ipNumber + '0';
+            } else {
+              mqttServer[9 + keyPresses] = ipNumber + '0';
+            } 
+            keyPresses++;
+          }
+        }
+      }    
+    }
+    delay(30);
+  }
+  for (int i = 0; i < 3; i++) {
+    displayWifiAnimation();  
+  }
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {  
+  String message;
+  for(int i = 0; i < length; i++) {
+     message = message + (char)payload[i];
+  }
+  Serial.println(message);
+  if (message == "develop") {
+    currentPage = 1;
+  } else if (message == "browser") {
+    currentPage = 2;
+  } else if (message == "edit") {
+    currentPage = 3;
+  } else {
+    currentPage = 0;
+  }
+  displayChangePageAnimation();
+  lastPress = millis();
+}
+
+void loop() {    
+  if (millis() - lastPress > MAX_STANDBY_TIME) {
+    if (millis() - lastRandomAnimation > MAX_RANDOM_ANIMATION_TIME) {      
+      trellis.clear();
+      displayRandomAnimation();
+      lastRandomAnimation = millis();
+    }
+  } else {
+    trellis.clear();
+    trellis.setLED(currentPage);
+  }
+  if (trellis.readSwitches()) {
+    for (int key = 0; key < NUM_KEYS; key++) {      
+      if (key < 4 && trellis.justReleased(key)) {
+        if (millis() - lastPress < MAX_STANDBY_TIME) {
+          currentPage = key;
+        }
+        lastPress = millis();
+      } else {
+        if (trellis.justPressed(key)) {
+          trellis.setLED(key);          
+        }
+        if (trellis.justReleased(key)) {
+          trellis.clrLED(key);   
+          if (millis() - lastPress < MAX_STANDBY_TIME) {
+            displayButtonReleaseAnimation(key);
+            char buf[8];
+            itoa((currentPage * (NUM_KEYS - 4)) + (key - 4), buf, 10);  
+            client.publish(mqttPubTopic, buf);      
+          }
+          lastPress = millis();
+        }
+      }
+    }
+  }
+  trellis.writeDisplay();
+  client.loop();
+  delay(30);
+}
+
+void displayInitAnimation() {
+  for (uint8_t i=0; i<NUM_KEYS; i++) {
     trellis.setLED(i);
     trellis.writeDisplay();    
     delay(50);
   }
-  for (uint8_t i=0; i<numKeys; i++) {
+  for (uint8_t i=0; i<NUM_KEYS; i++) {
     trellis.clrLED(i);
     trellis.writeDisplay();    
     delay(50);
   }
 }
 
-void displayWifi() {
+void displayWifiAnimation() {
   trellis.setLED(0);
   trellis.writeDisplay();    
   delay(50);
@@ -96,7 +198,7 @@ void displayWifi() {
   delay(50);
 }
 
-void displayConnectionSuccess() {
+void displayConnectionSuccessAnimation() {
   for (int i = 4; i < 8; i++) {
     trellis.clear();
     trellis.setLED(i);  
@@ -117,7 +219,7 @@ void displayConnectionSuccess() {
   delay(50);
 }
 
-void displayConnectionError() {
+void displayConnectionErrorAnimation() {
   trellis.clear();
   trellis.setLED(0);
   trellis.setLED(3);
@@ -127,40 +229,71 @@ void displayConnectionError() {
   trellis.setLED(10);
   trellis.setLED(12);
   trellis.setLED(15);
-  trellis.writeDisplay();  
+  trellis.writeDisplay();
   delay(1000);
   trellis.clear();
+  trellis.writeDisplay();  
+}
+
+void displayNumPad() {
+  trellis.clear();
+  trellis.setLED(0);
+  trellis.setLED(1);
+  trellis.setLED(2);
+  trellis.setLED(4);
+  trellis.setLED(5);
+  trellis.setLED(6);
+  trellis.setLED(8);
+  trellis.setLED(9);
+  trellis.setLED(10);
+  trellis.setLED(13);
   trellis.writeDisplay();
 }
 
-void callback(char* topic, byte* payload, unsigned int length) {  
-  String message;
-  for(int i = 0; i < length; i++) {
-     message = message + (char)payload[i];
+void displayRandomAnimation() {
+  for (int i = 0; i < NUM_KEYS; i++) {
+    if (random(0, 2) == 1) {
+      trellis.setLED(i);
+    } else {
+      trellis.clrLED(i);
+    }
   }
-  if (message == "1") {
-    trellis.clear();
-    trellis.setLED(0);
-    trellis.writeDisplay();
-  }
-  Serial.println(message);
 }
 
-void loop() {  
-  if (trellis.readSwitches()) {
-    for (int i = 0; i < numKeys; i++) {
-      if (trellis.justPressed(i)) {
-        trellis.setLED(i);
-      } 
-      if (trellis.justReleased(i)) {
-        trellis.clrLED(i);   
-        char buf[8];
-        itoa(i, buf, 10);
-        client.publish("fromTrellis", buf);      
-      }
-    }    
+void displayButtonReleaseAnimation(int button) {
+  int row = button / 4;
+  int column = button % 4;  
+  for (int i = 1; i < 4; i++) {
+    trellis.clear();
+    trellis.setLED(currentPage);
+    if (row + i < 4) {
+      trellis.setLED(button + (i * 4));
+    }
+    if (row - i >= 0) {
+      trellis.setLED(button - (i * 4));
+    }
+    if (column + i < 4) {
+      trellis.setLED(button + i);
+    }
+    if (column - i >= 0) {
+      trellis.setLED(button - i); 
+    }
     trellis.writeDisplay();
+    delay(100);
   }
-  client.loop();
-  delay(30);
+  trellis.clear();
+  trellis.setLED(currentPage);
+  trellis.writeDisplay();
+}
+
+void displayChangePageAnimation() {  
+  for (int i = 0; i < 4; i++) {
+    trellis.clear();
+    trellis.setLED(i);
+    trellis.setLED(4 + i);
+    trellis.setLED(8 + i);
+    trellis.setLED(12 + i);
+    trellis.writeDisplay();
+    delay(50);
+  }    
 }
