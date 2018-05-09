@@ -26,6 +26,7 @@ long lastRandomAnimation = 0;
 
 void setup() {
   Serial.begin(115200);
+  Serial.println("ATREYU - Applescript TREllis keYboard bUddy");
   randomSeed(analogRead(0));
   trellis.begin(0x70);
   trellis.setBrightness(15);
