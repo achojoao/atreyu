@@ -23,16 +23,16 @@ EOD)
         TRELLIS_PAGE=""
         if [ "$CURRENT_APP" = "Terminal" ]
         then
-            TRELLIS_PAGE="terminal";
+            TRELLIS_PAGE="page3";
         elif [ "$CURRENT_APP" = "Qt Creator" ] || [ "$CURRENT_APP" = "studio" ] || [ "$CURRENT_APP" = "Xcode" ] 
         then
-            TRELLIS_PAGE="develop";
+            TRELLIS_PAGE="page1";
         elif [ "$CURRENT_APP" = "firefox" ] || [ "$CURRENT_APP" = "Google Chrome" ]
         then
-            TRELLIS_PAGE="browser";
+            TRELLIS_PAGE="page2";
         elif [ "$CURRENT_APP" = "Sublime Text 2" ]
         then
-            TRELLIS_PAGE="edit";
+            TRELLIS_PAGE="page0";
         fi
         mosquitto_pub -t toAtreyu -m "$TRELLIS_PAGE"
     fi 
