@@ -91,11 +91,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
      message = message + (char)payload[i];
   }
   Serial.println(message);
-  if (message == "develop") {
+  if (message == "page1") {
     currentPage = 1;
-  } else if (message == "browser") {
+  } else if (message == "page2") {
     currentPage = 2;
-  } else if (message == "edit") {
+  } else if (message == "page3") {
     currentPage = 3;
   } else {
     currentPage = 0;
