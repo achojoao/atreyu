@@ -1,6 +1,6 @@
 # atreyu
 
-<b>A</b>pplescript <b>TRE</b>llis ke<b>Y</b>board b<b>U</b>ddy
+<b>a</b>pplescript <b>tre</b>llis ke<b>y</b>board b<b>u</b>ddy
 
 ## What is it?
 
@@ -47,7 +47,7 @@ When changin between apps in your mac, atreyu automatic changes the page assigne
 The below table shows the current configuration that the atreyu provides right out of the box. When a button is pressed, its value is published to the mosquitto server. The script, which is a subscriber of the same topic, executes the AppleScript correspondent to the button value. Usually, it's some key presses.
 
 
-|  Button | Page0 | Page1 | Page2 | Page3 |
+|  Button | Page 1 | Page 2 | Page 3 | Page 4 |
 |---|---|---|---|---|
 | 1 |   |   |   |   |
 | 2 |   |   |   |   |
