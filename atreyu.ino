@@ -9,7 +9,7 @@
 
 const char* ssid = "";
 const char* password = "";
-char* mqttServer = "192.168.1.133";
+char* mqttServer = "192.168.000.000";
 const int mqttPort = 1883;
 const char* mqttUser = "admin";
 const char* mqttPassword = "admin";
@@ -53,7 +53,7 @@ void setup() {
 void changeIPMode() {  
   displayNumPad();
   int keyPresses = 0;
-  while (keyPresses < 4) {
+  while (keyPresses < 6) {
     if (trellis.readSwitches()) {
       for (int key = 0; key < NUM_KEYS; key++) {
         if (trellis.isKeyPressed(key)) {
@@ -68,8 +68,8 @@ void changeIPMode() {
             ipNumber = 0;
           }
           if (ipNumber > -1) {
-            if (keyPresses == 0) { 
-              mqttServer[8] = ipNumber + '0';
+            if (keyPresses < 3) { 
+              mqttServer[8 + keyPresses] = ipNumber + '0';
             } else {
               mqttServer[9 + keyPresses] = ipNumber + '0';
             } 
