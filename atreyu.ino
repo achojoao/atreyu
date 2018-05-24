@@ -129,10 +129,10 @@ void loop() {
         if (trellis.justReleased(key)) {
           trellis.clrLED(key);   
           if (millis() - lastPress < MAX_STANDBY_TIME) {
-            displayButtonReleaseAnimation(key);
             char buf[8];
             itoa((currentPage * (NUM_KEYS - 4)) + (key - 4), buf, 10);  
             client.publish(mqttPubTopic, buf);      
+            displayButtonReleaseAnimation(key);
           }
           lastPress = millis();
         }
