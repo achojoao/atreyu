@@ -30,7 +30,7 @@ It's a programmable 16 button keypad that helps you with common tasks in your da
 
 After configuring and starting mosquitto in your Mac, plug atreyu to any available USB port.
 
-It tries to connect to your WiFi (you must set SSID and password previously in the arduino script) and then to the mosquitto server. The IP of your Mac must be setted in the arduino script too, but if it's dynamic, no problem, you can configure the last 4 cipher of it. Just press the last button when the connecting error animation displays, and it'll show a numpad where you can select the numbers of the IP of your Mac (i.e. 192.168.<b>2</b>.<b>134</b>).
+It tries to connect to your WiFi (you must set SSID and password previously in the arduino script) and then to the mosquitto server. The IP of your Mac must be setted in the arduino script too, but if it's dynamic, no problem, you can configure the last two ranges or 6 cipher of it. Just press the bottom-right button when the connecting error animation displays, and it'll show a numpad where you can select the numbers of the IP of your Mac (i.e. 192.168.<b>002</b>.<b>134</b>).
 
 ### Pages
 
